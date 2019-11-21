@@ -1,10 +1,33 @@
 #include <iostream>
 #include <omp.h>
 #include <mutex>
+#include <algorithm>
 #include "task.h"
+
+struct str {
+	int rowA, colA, rowB, colB;
+};
+
+bool f(const str& a, const str& b){
+	if(a.rowA != b.rowA)
+		return a.rowA < b.rowA;
+	if(a.colA != b.colA)
+		return a.colA < b.colA;
+	if(a.rowB != b.rowB)
+		return a.rowB < b.rowB;
+	return a.colB < b.colB;
+}
 
 void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes, double* data, int32_t* queries, double* result)
 {
+	str* queri = new str[nQueries];
+	for(int i = 0; i < nQueries; i++) {
+		queri[i].rowA = queries[i*4];
+		queri[i].colA = queries[i*4+1];
+		queri[i].rowB = queries[i*4+2];
+		queri[i].colB = queries[i*4+3];
+	}
+	std::sort(queri, queri+nQueries, f);
     const int NUMBER_OF_THREADS = omp_get_max_threads();
     omp_lock_t lock;
     omp_init_lock(&lock);
@@ -18,36 +41,12 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
         int32_t start = nQueries * tid / omp_get_num_threads();
         int32_t finish = nQueries * (tid + 1) / omp_get_num_threads();
         // std::cout << "tid: " << tid << " start: " << start << " fin: " << finish << std::endl;
-
-        #if 0
         for (int32_t queryId = start; queryId < finish; queryId++)
         {
-            int32_t rowA = queries[queryId * 4 + 0];
-            int32_t colA = queries[queryId * 4 + 1];
-            int32_t rowB = queries[queryId * 4 + 2];
-            int32_t colB = queries[queryId * 4 + 3];
-
-            #pragma omp parallel for collapse(2)
-            for (int32_t row = 0; row < nRes; row++)
-            {
-                for (int32_t col = 0; col < nRes; col++)
-                {
-                    int32_t cRowA = rowA + row;
-                    int32_t cColA = colA + col;
-                    int32_t cRowB = rowB + row;
-                    int32_t cColB = colB + col;
-
-                    localResult[row * nRes + col] += data[cRowA * nCols + cColA] * data[cRowB * nCols + cColB];
-                }
-            }
-        }
-        #else
-        for (int32_t queryId = start; queryId < finish; queryId++)
-        {
-            int32_t rowA = queries[queryId * 4 + 0];
-            int32_t colA = queries[queryId * 4 + 1];
-            int32_t rowB = queries[queryId * 4 + 2];
-            int32_t colB = queries[queryId * 4 + 3];
+            int32_t rowA = queri[queryId].rowA;
+            int32_t colA = queri[queryId].colA;
+            int32_t rowB = queri[queryId].rowB;
+            int32_t colB = queri[queryId].colB;
 
             #pragma omp parallel for
             for (int32_t row = 0; row < nRes; row++) {
@@ -59,7 +58,6 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
                 }
             }
         }
-        #endif
 
         omp_set_lock(&lock);
         // std::cout << "copy start: " << tid << std::endl;
