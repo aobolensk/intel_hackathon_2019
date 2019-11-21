@@ -11,6 +11,7 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
         int32_t rowB = queries[queryId * 4 + 2];
         int32_t colB = queries[queryId * 4 + 3];
 
+        #pragma omp parallel for collapse(2)
         for (int32_t col = 0; col < nRes; col++)
         {
             for (int32_t row = 0; row < nRes; row++)
