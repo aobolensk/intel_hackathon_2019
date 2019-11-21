@@ -20,13 +20,7 @@ bool f(const str& a, const str& b){
 
 void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes, double* data, int32_t* queries, double* result)
 {
-	str* queri = new str[nQueries];
-	for(int i = 0; i < nQueries; i++) {
-		queri[i].rowA = queries[i*4];
-		queri[i].colA = queries[i*4+1];
-		queri[i].rowB = queries[i*4+2];
-		queri[i].colB = queries[i*4+3];
-	}
+	str* queri = (str *)queries;
 	std::sort(queri, queri+nQueries, f);
     const int NUMBER_OF_THREADS = omp_get_max_threads();
     omp_lock_t lock;
@@ -66,7 +60,6 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
             result[i] += localResult[i];
         }
         omp_unset_lock(&lock);
-        #pragma omp barrier
     }
 
     omp_destroy_lock(&lock);
