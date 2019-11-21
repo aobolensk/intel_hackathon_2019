@@ -5,23 +5,23 @@
 #include "task.h"
 
 struct str {
-	int rowA, colA, rowB, colB;
+    int rowA, colA, rowB, colB;
 };
 
 bool f(const str& a, const str& b){
-	if(a.rowA != b.rowA)
-		return a.rowA < b.rowA;
-	if(a.colA != b.colA)
-		return a.colA < b.colA;
-	if(a.rowB != b.rowB)
-		return a.rowB < b.rowB;
-	return a.colB < b.colB;
+    if(a.rowA != b.rowA)
+        return a.rowA < b.rowA;
+    if(a.colA != b.colA)
+        return a.colA < b.colA;
+    if(a.rowB != b.rowB)
+        return a.rowB < b.rowB;
+    return a.colB < b.colB;
 }
 
 void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes, double* data, int32_t* queries, double* result)
 {
-	str* queri = (str *)queries;
-	std::sort(queri, queri+nQueries, f);
+    str* queri = (str *)queries;
+    std::sort(queri, queri+nQueries, f);
     const int NUMBER_OF_THREADS = omp_get_max_threads();
     omp_lock_t lock;
     omp_init_lock(&lock);
