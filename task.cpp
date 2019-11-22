@@ -23,8 +23,6 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
     str* queri = (str *)queries;
     std::sort(queri, queri+nQueries, f);
     const int NUMBER_OF_THREADS = omp_get_max_threads();
-    omp_lock_t lock;
-    omp_init_lock(&lock);
 
     // std::cout << "number of threads: " << NUMBER_OF_THREADS << std::endl;
 
@@ -53,14 +51,10 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
             }
         }
 
-        omp_set_lock(&lock);
-        // std::cout << "copy start: " << tid << std::endl;
         #pragma omp parallel for
         for (int32_t i = 0; i < nRes * nRes; ++i) {
+            #pragma omp atomic
             result[i] += localResult[i];
         }
-        omp_unset_lock(&lock);
     }
-
-    omp_destroy_lock(&lock);
 }
