@@ -1,7 +1,10 @@
+#pragma GCC target("avx2")
+
 #include <iostream>
 #include <omp.h>
 #include <mutex>
 #include <algorithm>
+#include <immintrin.h>
 #include "task.h"
 
 struct str {
@@ -40,21 +43,28 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
             int32_t rowB = queri[queryId].rowB;
             int32_t colB = queri[queryId].colB;
 
-            #pragma omp parallel for
             for (int32_t row = 0; row < nRes; row++) {
                 int32_t resultIndex = row * nRes;
                 int32_t dataIndex1 = (rowA + row) * nCols + colA;
                 int32_t dataIndex2 = (rowB + row) * nCols + colB;
-                for (int32_t i = 0; i < nRes; ++i) {
-                    localResult[resultIndex++] += data[dataIndex1++] * data[dataIndex2++];
+                for (int32_t i = 0; i < nRes; i += 4) {
+                    __m256d a = _mm256_loadu_pd(&data[dataIndex1]);
+                    __m256d b = _mm256_loadu_pd(&data[dataIndex2]);
+                    __m256d c = _mm256_mul_pd(a, b);
+                    __m256d d = _mm256_loadu_pd(&localResult[resultIndex]);
+                    __m256d e = _mm256_add_pd(d, c);
+                    _mm256_storeu_pd(&localResult[resultIndex], e);
+                    resultIndex += 4;
+                    dataIndex1 += 4;
+                    dataIndex2 += 4;
                 }
             }
         }
-
-        #pragma omp parallel for
-        for (int32_t i = 0; i < nRes * nRes; ++i) {
-            #pragma omp atomic
-            result[i] += localResult[i];
+        for (int32_t i = 0; i < nRes * nRes; i += 4) {
+            __m256d a = _mm256_loadu_pd(&result[i]);
+            __m256d b = _mm256_loadu_pd(&localResult[i]);
+            __m256d c = _mm256_add_pd(a, b);
+            _mm256_storeu_pd(&result[i], c);
         }
     }
 }
