@@ -24,8 +24,6 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
     std::sort(queri, queri+nQueries, f);
     const int NUMBER_OF_THREADS = omp_get_max_threads();
 
-    // std::cout << "number of threads: " << NUMBER_OF_THREADS << std::endl;
-
     double *arena = new double[sizeof(double) * nRes * nRes * NUMBER_OF_THREADS];
 
     #pragma omp parallel num_threads(NUMBER_OF_THREADS)
@@ -34,7 +32,6 @@ void performQueries(int32_t nRows, int32_t nCols, int32_t nQueries, int32_t nRes
         double *localResult = arena + sizeof(double) * nRes * nRes * tid;
         int32_t start = nQueries * tid / omp_get_num_threads();
         int32_t finish = nQueries * (tid + 1) / omp_get_num_threads();
-        // std::cout << "tid: " << tid << " start: " << start << " fin: " << finish << std::endl;
         for (int32_t queryId = start; queryId < finish; queryId++)
         {
             int32_t rowA = queri[queryId].rowA;
